@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAXCHAT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #0a0a0a;
+            color: white;
+            height: 100vh;
+            width: 100vw;
+            transition: background 0.5s ease;
+        }
+
+        /* Dynamic Background Layers */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: opacity 0.8s ease;
+        }
+
+        .bg-red { background: radial-gradient(circle at center, #ff0040 0%, #8b0000 50%, #1a0000 100%); opacity: 0; }
+        .bg-yellow { background: radial-gradient(circle at center, #ffcc00 0%, #cc9900 50%, #332200 100%); opacity: 0; }
+        .bg-blue { background: radial-gradient(circle at center, #0066ff 0%, #003399 50%, #000d1a 100%); opacity: 0; }
+        .bg-default { background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1e 50%, #000000 100%); opacity: 1; }
+
+        /* Ambient Pulse Overlay */
+        .ambient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 0, 128, 0.1) 0%, transparent 50%);
+            animation: ambientPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes ambientPulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Top Section */
+        .top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* DP with Aura (Left) */
+        .profile-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .aura {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 0, 128, 0.8) 0%, rgba(255, 0, 128, 0.4) 40%, transparent 70%);
+            filter: blur(8px);
+            animation: calmPulse 3s ease-in-out infinite;
+            transition: all 0.5s ease;
+        }
+
+        .aura.noisy {
+            animation: noisyPulse 0.5s ease-in-out infinite;
+            background: radial-gradient(circle, rgba(255, 0, 128, 1) 0%, rgba(255, 0, 200, 0.6) 40%, transparent 70%);
+            filter: blur(12px);
+        }
+
+        @keyframes calmPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes noisyPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+        }
+
+        .dp {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            z-index: 2;
+        }
+
+        .dp img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Center Orb (Under Camera) */
+        .orb-container {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .camera-notch {
+            width: 120px;
+            height: 25px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .camera-lens {
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle at 30% 30%, #333, #000);
+            border-radius: 50%;
+            border: 1px solid #444;
+        }
+
+        .orb {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff4444, #cc0000, #660000);
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.6), inset 0 0 20px rgba(255, 100, 100, 0.5);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .orb::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 20%;
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle, rgba(255, 200, 200, 0.8), transparent);
+            border-radius: 50%;
+        }
+
+        .orb.active {
+            background: radial-gradient(circle at 30% 30%, #ff6666, #ff0000, #990000);
+            box-shadow: 0 0 60px rgba(255, 0, 0, 0.9), 0 0 100px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(255, 150, 150, 0.8);
+            transform: scale(1.2);
+            animation: orbPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes orbPulse {
+            0%, 100% { box-shadow: 0 0 60px rgba(255, 0, 0, 0.9), 0 0 100px rgba(255, 0, 0, 0.4); }
+            50% { box-shadow: 0 0 80px rgba(255, 0, 0, 1), 0 0 120px rgba(255, 0, 0, 0.6); }
+        }
+
+        .orb.faded {
+            opacity: 0.3;
+            transform: scale(0.9);
+            filter: grayscale(0.5);
+        }
+
+        .gaze-status {
+            margin-top: 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            transition: all 0.3s;
+        }
+
+        /* Control Buttons */
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .control-btn.hug {
+            background: rgba(255, 100, 150, 0.3);
+        }
+
+        .control-btn.hug:hover {
+            background: rgba(255, 100, 150, 0.5);
+            box-shadow: 0 0 20px rgba(255, 100, 150, 0.5);
+        }
+
+        .control-btn.active {
+            background: rgba(100, 200, 255, 0.4);
+            box-shadow: 0 0 15px rgba(100, 200, 255, 0.5);
+        }
+
+        /* Chat Board */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            position: relative;
+            animation: messageSlide 0.3s ease;
+            word-wrap: break-word;
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 20px;
+            border-bottom-left-radius: 5px;
+            gap: 5px;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .chat-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            font-size: 20px;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Speed Indicator */
+        .speed-indicator {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .speed-indicator.visible {
+            opacity: 1;
+        }
+
+        /* Video Call Overlay */
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-overlay.active {
+            display: flex;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 90%;
+            height: 70%;
+        }
+
+        .video-box {
+            background: #1a1a1a;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .video-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+
+        .video-btn.end {
+            background: #ff4444;
+            color: white;
+        }
+
+        .video-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Gallery Modal */
+        .gallery-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .gallery-modal.active {
+            display: block;
+        }
+
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1001;
+            display: none;
+            min-width: 300px;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .settings-modal.active {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .settings-item {
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle {
+            width: 50px;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: #667eea;
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Hug Animation */
+        .hug-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 120px;
+            z-index: 999;
+            pointer-events: none;
+            animation: hugPop 1s ease forwards;
+        }
+
+        @keyframes hugPop {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.3) rotate(10deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .video-grid {
+                grid-template-columns: 1fr;
+                height: 50%;
+            }
+            .controls {
+                gap: 8px;
+            }
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Layers -->
+    <div class="bg-layer bg-default" id="bgDefault"></div>
+    <div class="bg-layer bg-red" id="bgRed"></div>
+    <div class="bg-layer bg-yellow" id="bgYellow"></div>
+    <div class="bg-layer bg-blue" id="bgBlue"></div>
+    <div class="ambient-overlay"></div>
+
+    <!-- Speed Indicator -->
+    <div class="speed-indicator" id="speedIndicator">Typing Speed: Normal</div>
+
+    <div class="container">
+        <!-- Top Section -->
+        <div class="top-section">
+            <!-- Profile with Aura -->
+            <div class="profile-container">
+                <div class="aura" id="aura"></div>
+                <div class="dp" id="userDP">👤</div>
+            </div>
+
+            <!-- Center Orb -->
+            <div class="orb-container">
+                <div class="camera-notch">
+                    <div class="camera-lens"></div>
+                    <div class="camera-lens" style="width: 8px; height: 8px;"></div>
+                </div>
+                <div class="orb" id="eyeOrb"></div>
+                <div class="gaze-status" id="gazeStatus">Looking Away</div>
+            </div>
+
+            <!-- Spacer for balance -->
+            <div style="width: 80px;"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn" id="settingsBtn" title="Settings">⚙️</button>
+            <button class="control-btn hug" id="hugBtn" title="Send Hug">🤗</button>
+            <button class="control-btn" id="syncBtn" title="Sync">🔄</button>
+            <button class="control-btn" id="cameraBtn" title="Camera">📷</button>
+            <button class="control-btn" id="videoBtn" title="Video Call">📹</button>
+            <button class="control-btn" id="galleryBtn" title="Gallery">🖼️</button>
+        </div>
+
+        <!-- Chat Board -->
+        <div class="chat-container" id="chatContainer">
+            <div class="message received">
+                Welcome to MAXCHAT! 👋<br>
+                I'm here to chat. The orb glows when you look at the camera, and the background changes based on your typing speed!
+                <div class="message-time">Just now</div>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dot"></div>
+ <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." autocomplete="off">
+                <button class="send-btn" id="sendBtn">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Call Overlay -->
+    <div class="video-overlay" id="videoOverlay">
+        <div class="video-grid">
+            <div class="video-box" id="remoteVideo">
+                <div>👤 Remote</div>
+            </div>
+            <div class="video-box" id="localVideo">
+                <div>📹 You</div>
+            </div>
+        </div>
+        <div class="video-controls">
+            <button class="video-btn" id="muteBtn">🎤</button>
+            <button class="video-btn" id="camToggleBtn">📷</button>
+            <button class="video-btn end" id="endCallBtn">📞</button>
+        </div>
+    </div>
+
+    <!-- Gallery Modal -->
+    <div class="gallery-modal" id="galleryModal">
+        <div class="gallery-header">
+            <h2>Gallery</h2>
+            <button class="control-btn" id="closeGallery" style="width: 40px; height: 40px;">✕</button>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <h2 style="margin-bottom: 20px; text-align: center;">Settings</h2>
+        <div class="settings-item">
+            <span>Noise Detection</span>
+            <div class="toggle active" id="noiseToggle"></div>
+        </div>
+        <div class="settings-item">
+            <span>Eye Tracking</span>
+            <div class="toggle active" id="eyeToggle"></div>
+        </div>
+        <div class="settings-item">
+            <span>Typing Effects</span>
+            <div class="toggle active" id="typingToggle"></div>
+        </div>
+        <div class="settings-item">
+            <span>Notifications</span>
+            <div class="toggle active" id="notifToggle"></div>
+        </div>
+        <button class="control-btn" id="closeSettings" style="width: 100%; margin-top: 20px; border-radius: 15px;">Close</button>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            isTyping: false,
+            lastTypeTime: Date.now(),
+            typingSpeed: 'normal', // fast, slow, normal
+            gazeDetected: false,
+            noiseLevel: 0,
+            messages: [],
+            videoCallActive: false,
+            audioContext: null,
+            analyser: null,
+            microphone: null
+        };
+
+        // DOM Elements
+        const aura = document.getElementById('aura');
+        const eyeOrb = document.getElementById('eyeOrb');
+        const gazeStatus = document.getElementById('gazeStatus');
+        const chatInput = document.getElementById('chatInput');
+        const chatContainer = document.getElementById('chatContainer');
+        const sendBtn = document.getElementById('sendBtn');
+        const bgRed = document.getElementById('bgRed');
+        const bgYellow = document.getElementById('bgYellow');
+        const bgBlue = document.getElementById('bgBlue');
+        const bgDefault = document.getElementById('bgDefault');
+        const speedIndicator = document.getElementById('speedIndicator');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initNoiseDetection();
+            initEyeTracking();
+            initTypingDetection();
+            initControls();
+            simulateReceivedMessages();
+        });
+
+        // Noise Detection using Web Audio API
+        async function initNoiseDetection() {
+            try {
+                state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                state.microphone = state.audioContext.createMediaStreamSource(stream);
+                state.analyser = state.audioContext.createAnalyser();
+                state.analyser.fftSize = 256;
+                state.microphone.connect(state.analyser);
+
+                const dataArray = new Uint8Array(state.analyser.frequencyBinCount);
+                
+                function checkNoise() {
+                    if (!document.getElementById('noiseToggle').classList.contains('active')) {
+                        aura.classList.remove('noisy');
+                        requestAnimationFrame(checkNoise);
+                        return;
+                    }
+
+                    state.analyser.getByteFrequencyData(dataArray);
+                    const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                    state.noiseLevel = average;
+
+                    // Threshold for noisy environment
+                    if (average > 30) {
+                        aura.classList.add('noisy');
+                    } else {
+                        aura.classList.remove('noisy');
+                    }
+
+                    requestAnimationFrame(checkNoise);
+                }
+                
+                checkNoise();
+            } catch (err) {
+                console.log('Microphone access denied or not available');
+                // Simulate noise detection with random values for demo
+                setInterval(() => {
+                    if (Math.random() > 0.7) {
+                        aura.classList.add('noisy');
+                        setTimeout(() => aura.classList.remove('noisy'), 1000);
+                    }
+                }, 3000);
+            }
+        }
+
+        // Eye Tracking Simulation (using mouse position as proxy for gaze)
+        function initEyeTracking() {
+            // In a real app, this would use WebGazer.js or similar
+            // For demo, we simulate based on mouse proximity to camera area
+            const orbContainer = document.querySelector('.orb-container');
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!document.getElementById('eyeToggle').classList.contains('active')) return;
+                
+                const rect = orbContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const distance = Math.sqrt(Math.pow(e.clientX - centerX, 2) + Math.pow(e.clientY - centerY, 2));
+                
+                // If mouse is near the camera area (simulating looking at camera)
+                if (distance < 150 && e.clientY < 200) {
+                    if (!state.gazeDetected) {
+                        state.gazeDetected = true;
+                        eyeOrb.classList.remove('faded');
+                        eyeOrb.classList.add('active');
+                        gazeStatus.textContent = 'Looking at Camera';
+                        gazeStatus.style.color = '#ff6666';
+                    }
+                } else {
+                    if (state.gazeDetected) {
+                        state.gazeDetected = false;
+                        eyeOrb.classList.remove('active');
+                        eyeOrb.classList.add('faded');
+                        gazeStatus.textContent = 'Looking Away';
+                        gazeStatus.style.color = 'rgba(255,255,255,0.7)';
+                    }
+                }
+            });
+
+            // Also activate when typing (simulating looking at screen/camera)
+            chatInput.addEventListener('focus', () => {
+                if (document.getElementById('eyeToggle').classList.contains('active')) {
+                    setTimeout(() => {
+                        eyeOrb.classList.add('active');
+                        eyeOrb.classList.remove('faded');
+                        gazeStatus.textContent = 'Engaged';
+                    }, 500);
+                }
+            });
+        }
+
+        // Typing Speed Detection & Background Color
+        function initTypingDetection() {
+            let typeTimes = [];
+            let lastKeyTime = Date.now();
+            let backgroundTimeout;
+
+            chatInput.addEventListener('keydown', (e) => {
+                if (!document.getElementById('typingToggle').classList.contains('active')) return;
+                
+                const now = Date.now();
+                const timeDiff = now - lastKeyTime;
+                lastKeyTime = now;
+                
+                if (timeDiff < 2000) { // Ignore pauses longer than 2 seconds
+                    typeTimes.push(timeDiff);
+                    if (typeTimes.length > 5) typeTimes.shift();
+                }
+
+                // Calculate average typing speed
+                if (typeTimes.length >= 3) {
+                    const avgTime = typeTimes.reduce((a, b) => a + b) / typeTimes.length;
+                    
+                    clearTimeout(backgroundTimeout);
+                    
+                    if (avgTime < 100) { // Fast typing
+                        setBackground('red');
+                        speedIndicator.textContent = 'Typing: Fast 🔥';
+                        showSpeedIndicator();
+                    } else if (avgTime < 300) { // Normal/Slow
+                        setBackground('yellow');
+                        speedIndicator.textContent = 'Typing: Slow ⭐';
+                        showSpeedIndicator();
+                    }
+                }
+
+                // Reset to blue if idle for 3 seconds
+                backgroundTimeout = setTimeout(() => {
+                    setBackground('blue');
+                    speedIndicator.textContent = 'Idle... 💤';
+                    showSpeedIndicator();
+                }, 3000);
+            });
+
+            chatInput.addEventListener('blur', () => {
+                setTimeout(() => setBackground('default'), 1000);
+            });
+        }
+
+        function setBackground(color) {
+            // Reset all
+            bgRed.style.opacity = '0';
+            bgYellow.style.opacity = '0';
+            bgBlue.style.opacity = '0';
+            bgDefault.style.opacity = '0';
+
+            // Set active
+            switch(color) {
+                case 'red':
+                    bgRed.style.opacity = '1';
+                    break;
+                case 'yellow':
+                    bgYellow.style.opacity = '1';
+                    break;
+                case 'blue':
+                    bgBlue.style.opacity = '1';
+                    break;
+                default:
+                    bgDefault.style.opacity = '1';
+            }
+        }
+
+        function showSpeedIndicator() {
+            speedIndicator.classList.add('visible');
+            setTimeout(() => {
+                if (!chatInput.matches(':focus')) {
+                    speedIndicator.classList.remove('visible');
+                }
+            }, 2000);
+        }
+
+        // Chat Functionality
+        function addMessage(text, isSent = true) {
+            const msg = document.createElement('div');
+            msg.className = `message ${isSent ? 'sent' : 'received'}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            msg.innerHTML = `${text}<div class="message-time">${time}</div>`;
+            
+            chatContainer.appendChild(msg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            state.messages.push({ text, isSent, time });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            
+            addMessage(text, true);
+            chatInput.value = '';
+            setBackground('default');
+            
+            // Simulate reply
+            typingIndicator.classList.add('active');
+            setTimeout(() => {
+                typingIndicator.classList.remove('active');
+                const replies = [
+                    "I feel that energy! 🔥",
+                    "Tell me more...",
+                    "That's interesting! 💭",
+                    "I see what you mean 👀",
+                    "MAXCHAT is vibing with you! ✨",
+                    "Keep typing, I'm here! 🤝"
+                ];
+                addMessage(replies[Math.floor(Math.random() * replies.length)], false);
+            }, 1500 + Math.random() * 2000);
+        }
+
+        function simulateReceivedMessages() {
+            // Occasional random messages
+            setInterval(() => {
+                if (Math.random() > 0.9 && state.messages.length > 0) {
+                    const randomMsgs = [
+                        "Still there? 👋",
+                        "The aura looks calm today 🌸",
+                        "Love the vibe! 🎵",
+                        "MAXCHAT is watching... in a good way! 👁️"
+                    ];
+                    if (!chatInput.matches(':focus')) {
+                        addMessage(randomMsgs[Math.floor(Math.random() * randomMsgs.length)], false);
+                    }
+                }
+            }, 15000);
+        }
+
+        // Controls
+        function initControls() {
+            // Settings
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+                document.getElementById('settingsModal').classList.add('active');
+            });
+
+            document.getElementById('closeSettings').addEventListener('click', () => {
+                document.getElementById('settingsModal').classList.remove('active');
+            });
+
+            // Toggle switches
+            document.querySelectorAll('.toggle').forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    toggle.classList.toggle('active');
+                });
+            });
+
+            // Hug Button
+            document.getElementById('hugBtn').addEventListener('click', () => {
+                const hug = document.createElement('div');
+                hug.className = 'hug-animation';
+                hug.textContent = '🤗';
+                document.body.appendChild(hug);
+                
+                addMessage("Sent a warm hug! 🤗", true);
+                
+                setTimeout(() => {
+                    hug.remove();
+                    addMessage("Received your hug! Feeling the love 💕", false);
+                }, 1000);
+            });
+
+            // Sync Button
+            document.getElementById('syncBtn').addEventListener('click', function() {
+                this.style.animation = 'spin 1s linear';
+                this.classList.add('active');
+                setTimeout(() => {
+                    this.classList.remove('active');
+                    this.style.animation = '';
+                    addMessage("Synced! All systems aligned ⚡", false);
+                }, 1000);
+            });
+
+            // Camera
+            document.getElementById('cameraBtn').addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    addMessage("📸 Camera activated! Smile for the orb!", false);
+                    // In real app, would open camera interface
+                } catch (err) {
+                    addMessage("Camera access needed for full experience 📷", false);
+                }
+            });
+
+            // Video Call
+            document.getElementById('videoBtn').addEventListener('click', () => {
+                document.getElementById('videoOverlay').classList.add('active');
+                state.videoCallActive = true;
+                addMessage("📹 Video call started!", false);
+            });
+
+            document.getElementById('endCallBtn').addEventListener('click', () => {
+                document.getElementById('videoOverlay').classList.remove('active');
+                state.videoCallActive = false;
+                addMessage("Call ended. Back to chat! 📱", false);
+            });
+
+            document.getElementById('muteBtn').addEventListener('click', function() {
+                this.classList.toggle('active');
+                this.textContent = this.classList.contains('active') ? '🎤❌' : '🎤';
+            });
+
+            document.getElementById('camToggleBtn').addEventListener('click', function() {
+                this.classList.toggle('active');
+                this.textContent = this.classList.contains('active') ? '📷❌' : '📷';
+            });
+
+            // Gallery
+            const galleryModal = document.getElementById('galleryModal');
+            const galleryGrid = document.getElementById('galleryGrid');
+            
+            // Populate gallery with emojis as placeholders
+            const emojis = ['🌅', '🌸', '🌊', '🌙', '🔥', '💎', '🎨', '🎭', '🎪', '🎯', '🎲', '🎸'];
+            emojis.forEach(emoji => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.textContent = emoji;
+                item.addEventListener('click', () => {
+                    addMessage(`Shared ${emoji} from gallery`, true);
+                    galleryModal.classList.remove('active');
+                });
+                galleryGrid.appendChild(item);
+            });
+
+            document.getElementById('galleryBtn').addEventListener('click', () => {
+                galleryModal.classList.add('active');
+            });
+
+            document.getElementById('closeGallery').addEventListener('click', () => {
+                galleryModal.classList.remove('active');
+            });
+        }
+
+        // Add spin animation for sync button
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
